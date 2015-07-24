@@ -1,4 +1,4 @@
-NetduinoRGBLCDShield
+rgbshield4netduino
 =============
 
 This is a port of the Adafruit driver for the [Adafruit RGB LCD Shield](https://www.adafruit.com/products/714)
