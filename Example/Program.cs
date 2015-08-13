@@ -1,4 +1,5 @@
 ﻿using Microsoft.SPOT.Hardware;
+using SecretLabs.NETMF.Hardware.Netduino;
 using System;
 using System.Threading;
 
@@ -8,6 +9,9 @@ namespace NetduinoRGBLCDShield
     {
         private static MCP23017 mcp23017;
         private static RGBLCDShield lcdBoard;
+        private static OutputPort onboardLED = new OutputPort(Pins.ONBOARD_LED, false);
+        private static InterruptPort btnShield { get; set; }
+
 
         public static void Main()
         {
@@ -24,52 +28,48 @@ namespace NetduinoRGBLCDShield
             // get the time so that we can track # of seconds since power up
             DateTime time = DateTime.Now;
 
-            Button currentButtons = 0;
+            lcdBoard.SetPosition(1, 0);
+            // calculate the number of seconds since power on
+            var seconds = (DateTime.Now - time).Ticks / TimeSpan.TicksPerSecond;
+            lcdBoard.Write(seconds.ToString());
 
-            while (true)
+            // Setup the interrupt port
+            btnShield = new InterruptPort(Pins.GPIO_PIN_D10, true, Port.ResistorMode.Disabled, Port.InterruptMode.InterruptEdgeLow);
+            // Bind the interrupt handler to the pin's interrupt event.
+            btnShield.OnInterrupt += new NativeEventHandler(btnShield_OnInterrupt);
+        }
+
+        public static void btnShield_OnInterrupt(UInt32 data1, UInt32 data2, DateTime time)
+        {
+            var ButtonPressed = mcp23017.ReadGpioAB();
+            var InterruptBits = BitConverter.GetBytes(ButtonPressed);
+
+
+            lcdBoard.Clear();
+            lcdBoard.SetPosition(0, 0);
+
+            switch (InterruptBits[0]) //the 0 value contains the button that was pressed...
             {
-                lcdBoard.SetPosition(1, 0);
-
-                // calculate the number of seconds since power on
-                var seconds = (DateTime.Now - time).Ticks / TimeSpan.TicksPerSecond;
-                lcdBoard.Write(seconds.ToString());
-
-                Button buttons = lcdBoard.ReadButtons();
-
-                // only update the screen if a new button is pressed
-                if (buttons != currentButtons && buttons != 0)
-                {
-                    lcdBoard.Clear();
-                    lcdBoard.SetPosition(0, 0);
-
-                    if ((buttons & Button.Up) != 0)
-                    {
-                        lcdBoard.Write("UP ");
-                        if (buttons == Button.Up) lcdBoard.SetBacklight(BacklightColor.Red);
-                    }
-                    if ((buttons & Button.Down) != 0)
-                    {
-                        lcdBoard.Write("DOWN ");
-                        if (buttons == Button.Down) lcdBoard.SetBacklight(BacklightColor.Yellow);
-                    }
-                    if ((buttons & Button.Right) != 0)
-                    {
-                        lcdBoard.Write("RIGHT ");
-                        if (buttons == Button.Right) lcdBoard.SetBacklight(BacklightColor.Green);
-                    }
-                    if ((buttons & Button.Left) != 0)
-                    {
-                        lcdBoard.Write("LEFT ");
-                        if (buttons == Button.Left) lcdBoard.SetBacklight(BacklightColor.Teal);
-                    }
-                    if ((buttons & Button.Select) != 0)
-                    {
-                        lcdBoard.Write("SELECT ");
-                        if (buttons == Button.Select) lcdBoard.SetBacklight(BacklightColor.Violet);
-                    }
-
-                    currentButtons = buttons;
-                }
+                case (int)Button.Up:
+                    lcdBoard.Write("UP ");
+                    lcdBoard.SetBacklight(BacklightColor.Red);
+                    break;
+                case (int)Button.Down:
+                    lcdBoard.Write("Down ");
+                    lcdBoard.SetBacklight(BacklightColor.Yellow);
+                    break;
+                case (int)Button.Left:
+                    lcdBoard.Write("Left ");
+                    lcdBoard.SetBacklight(BacklightColor.Green);
+                    break;
+                case (int)Button.Right:
+                    lcdBoard.Write("Right ");
+                    lcdBoard.SetBacklight(BacklightColor.Teal);
+                    break;
+                case (int)Button.Select:
+                    lcdBoard.Write("Select ");
+                    lcdBoard.SetBacklight(BacklightColor.Violet);
+                    break;
             }
         }
     }
