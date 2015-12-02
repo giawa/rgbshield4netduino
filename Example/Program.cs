@@ -43,12 +43,16 @@ namespace NetduinoRGBLCDShield
         {
             var ButtonPressed = mcp23017.ReadGpioAB();
             var InterruptBits = BitConverter.GetBytes(ButtonPressed);
+            var ButtonValue = (InterruptBits[0] & 0x1F);
 
+
+            if (ButtonValue == 0)
+                return;
 
             lcdBoard.Clear();
             lcdBoard.SetPosition(0, 0);
 
-            switch (InterruptBits[0]) //the 0 value contains the button that was pressed...
+            switch (ButtonValue)
             {
                 case (int)Button.Up:
                     lcdBoard.Write("UP ");
@@ -69,6 +73,9 @@ namespace NetduinoRGBLCDShield
                 case (int)Button.Select:
                     lcdBoard.Write("Select ");
                     lcdBoard.SetBacklight(BacklightColor.Violet);
+                    break;
+                default:
+                    Microsoft.SPOT.Debug.Print("Unrecognized Button...");
                     break;
             }
         }

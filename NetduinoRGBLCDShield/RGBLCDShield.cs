@@ -12,7 +12,8 @@ namespace NetduinoRGBLCDShield
         Teal = 0x6,
         Blue = 0x4,
         Violet = 0x5,
-        White = 0x7
+        White = 0x7,
+        ColorCount
     }
 
     [Flags]
